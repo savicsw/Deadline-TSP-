@@ -3,18 +3,23 @@ from random import *
 from math import sqrt
 import operator
 import re
-
-
+import numpy
+import numpy as np
 
 points_in = [] #输入点序列
 size = 550  #地图尺寸
 deadline = []   #deadline （开始时间，截止时间）
-TimeList = []   #cost列表-各点之间访问的cost
+CostList = []   #cost列表-各点之间访问的cost
 speed = 10      #速度，用于调整cost的参数
 number = 50     #point的数量
 deadline_range = [(30,450),(540,960)]   #deadline的随机范围（平均分布）
 color = "black"     #颜色定义
 red_points = []     #红点序列
+destination = []    #目的地序列
+StationLoc = [(500,300),(200,50)]   #机场/车站
+variance = 100       #方差
+mu = 300            #均值   
+
 
 def click(event):
     draw_point(event.x, event.y)
@@ -48,6 +53,43 @@ def clear():
     deadline = []
     TimeList = []
     red_points = []
+
+
+
+def randomise_n(): #正态随机
+    global points_in
+    global deadline
+    global color
+    count = 0
+    clear()
+    for i in range(number):
+        while TRUE :
+            point = (variance*np.random.randn()+mu,variance*np.random.randn()+mu)
+            count = count + 1
+            if point[0] >= 0 and point[0] <= size and point[1] >= 0 and point[1] <= size:
+                break
+            if point[0] < 0 : point = (randint(0,5),point[1])
+            if point[0] > 550 :point = (randint(545,550),point[1])
+            if point[1] < 0 : point = (point[0],randint(0,5))
+            if point[1] > 550 :point = (point[0],randint(545,550))
+            break
+
+        points_in.append(point)
+        deadline.append((randint(int(deadline_range[0][0]),int(deadline_range[0][1])),randint(int(deadline_range[1][0]),int(deadline_range[1][1]))))
+    color = "black"
+    draw_points(points_in)
+    #random_destination()
+    print(count)
+
+
+
+
+def random_destination(): #随机地点
+    global destination
+    destination = []
+    for i in range(num):
+        destination.append(randint(0.1))
+
 
 
 def get_LT(points): #获取遍历序列要求的最晚开始时间
@@ -85,6 +127,8 @@ def randomise(): #随机数据
         deadline.append((randint(int(deadline_range[0][0]),int(deadline_range[0][1])),randint(int(deadline_range[1][0]),int(deadline_range[1][1]))))
     color = "black"
     draw_points(points_in)
+    random_destination()
+
 
 def dist(a,b):
     return sqrt(pow(a[0] - b[0], 2) + pow(a[1] - b[1], 2))
@@ -186,6 +230,7 @@ if __name__ == '__main__':
     Button(root, text = "Clear", command = clear).pack(side = LEFT)
     Button(root, text = "Randomise", command = randomise).pack(side = LEFT)
     Button(root, text = "time-2-OPT", command = lambda : optimisation_click(time_2_opt)).pack(side = LEFT)
+    Button(root, text = "Randomise_n", command = randomise_n).pack(side = LEFT)
     
 
     v = IntVar()

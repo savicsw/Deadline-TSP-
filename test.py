@@ -1,7 +1,8 @@
+import numpy
+import numpy as np
 
 
-list = [(111,2123),(3123,4123),(2411,1241),(1412,4563)]
+n = np.random.randn()
 
-print(list)
-list.reverse()
-print(list)
+print(n)
+print(int(n))
