@@ -16,9 +16,9 @@ deadline_range = [(30,450),(540,960)]   #deadline的随机范围（平均分布�
 color = "black"     #颜色定义
 red_points = []     #红点序列
 destination = []    #目的地序列
-StationLoc = [(500,300),(200,50)]   #机场/车站
-variance = 100       #方差
-mu = 300            #均值   
+Station = [(500,300),(200,50)]   #机场/车站
+variance = 130       #方差
+mu = 275            #均值   
 
 
 def click(event):
@@ -60,12 +60,10 @@ def randomise_n(): #正态随机
     global points_in
     global deadline
     global color
-    count = 0
     clear()
     for i in range(number):
         while TRUE :
             point = (variance*np.random.randn()+mu,variance*np.random.randn()+mu)
-            count = count + 1
             if point[0] >= 0 and point[0] <= size and point[1] >= 0 and point[1] <= size:
                 break
             if point[0] < 0 : point = (randint(0,5),point[1])
@@ -78,17 +76,17 @@ def randomise_n(): #正态随机
         deadline.append((randint(int(deadline_range[0][0]),int(deadline_range[0][1])),randint(int(deadline_range[1][0]),int(deadline_range[1][1]))))
     color = "black"
     draw_points(points_in)
-    #random_destination()
-    print(count)
+    random_destination()
 
 
 
 
-def random_destination(): #随机地点
+def random_destination(): #随机目的地
     global destination
     destination = []
-    for i in range(num):
-        destination.append(randint(0.1))
+    for i in range(number):
+        point = randint(0,1)
+        destination.append(point)
 
 
 
@@ -178,7 +176,6 @@ def depart_points(points):
             else:
                 red_points.append(points[i])
 
-    print("分类完成")
     return temp
 
 def distance(points):
@@ -202,7 +199,9 @@ def optimisation_click(algorithm):
 
         points = algorithm(points)
     points = depart_points(points)
-    print(points)
+    for i in range(5):
+
+        points = algorithm(points)
     color = "black"
     draw_points(points)
     color = "red"
