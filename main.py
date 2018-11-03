@@ -19,7 +19,7 @@ class TSP:
         self.end.loc = (487,535)
         self.list = []      #遍历点
         self.color = "black" #初始颜色 fill填充oval的颜色
-        self.speed = 2    #速度
+        self.speed = 3    #速度
         for i in range(50):
             self.list.append(point())
             #print("第",i+1,"个点坐标：",self.list[i].loc,",deadline:",self.list[i].deadline)
@@ -90,14 +90,13 @@ class TSP:
         count = 0
         for i in range(len(points)):
             if i == 0 :continue
-            if time_leave + self.cost(points[arrival],points[i]) < points[i].deadline[1]:
+            if time_leave + self.dist(points[arrival],points[i])/self.speed < points[i].deadline[1]:
                 self.color = "black"
                 count = count + 1
                 self.canvas.create_oval(points[i].loc[0]-3, points[i].loc[1]-3, points[i].loc[0]+3, points[i].loc[1]+3, fill = self.color, tags = "point")
                 self.canvas.create_line(points[arrival].loc,points[i].loc,tags = "line")
-                time_arrival = time_leave + self.cost(points[arrival],points[i])
-                if time_arrival < points[i].deadline[0]: time_leave = points[i].deadline[0]
-                else : time_leave = time_arrival
+                time_arrival = time_leave + self.dist(points[arrival],points[i])/self.speed
+                time_leave = time_leave + self.cost(points[arrival],points[i],time_leave)
                 arrival = i
                 print("第",count,"个点坐标：",points[i].loc,",Deadline:",int(points[i].deadline[0]/60)+8,":",int(points[i].deadline[0]%60),"-",int(points[i].deadline[1]/60)+8,":",int(points[i].deadline[1]%60),"到达时间：",int(time_arrival/60+8),":",int(time_arrival%60),"离开时间：",int(time_leave/60+8),":",int(time_leave%60))
 
@@ -121,8 +120,11 @@ class TSP:
             current_time = points[i].deadline[1]
         return current_time
 
-    def cost(self,a,b):
-        return sqrt(pow(a.loc[0] - b.loc[0], 2) + pow(a.loc[1] - b.loc[1], 2))/self.speed
+    def cost(self,a,b,time):
+        d1 = sqrt(pow(a.loc[0] - b.loc[0], 2) + pow(a.loc[1] - b.loc[1], 2))/self.speed
+        if time + d1 < b.deadline[0]:
+            return b.deadline[0] - time
+        return d1
 
     def get_time(self,points,time):
         current_time = time
@@ -131,7 +133,7 @@ class TSP:
             if current_time < points[i+1].deadline[0]: current_time = points[i+1].deadline[0]
         return current_time
         
-    def quicksort(points):
+    def quicksort(self,points):
         key = 0
         i = 0
         j = len(points)
@@ -223,9 +225,7 @@ class TSP:
 
     def  DIST(self,a,b,time):
         d1 = sqrt(pow(a.loc[0] - b.loc[0], 2) + pow(a.loc[1] - b.loc[1], 2))/self.speed
-        if time + d1 < b.deadline[0]:
-            return b.deadline[0] - time
-        return d1
+        return d1+(self.cost(a,b,time)-d1)*0.5
 
 
 
