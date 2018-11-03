@@ -19,7 +19,7 @@ class TSP:
         self.end.loc = (487,535)
         self.list = []      #遍历点
         self.color = "black" #初始颜色 fill填充oval的颜色
-        self.speed = 3    #速度
+        self.speed = 4    #速度
         for i in range(50):
             self.list.append(point())
             #print("第",i+1,"个点坐标：",self.list[i].loc,",deadline:",self.list[i].deadline)
@@ -84,6 +84,8 @@ class TSP:
         self.clear()
         self.canvas.create_oval(points[0].loc[0]-3, points[0].loc[1]-3, points[0].loc[0]+3, points[0].loc[1]+3, fill = "green", tags = "point")
         print("起点坐标（绿色）:",points[0].loc,"    Deadline说明：t1-t2中，t1为退房时间，t2为根据航班时间确定是行李最晚提取时间")
+        self.canvas.create_oval(self.end.loc[0]-3, self.end.loc[1]-3, self.end.loc[0]+3, self.end.loc[1]+3, fill = "yellow", tags = "point")
+        print("终点坐标（黄色）:",self.end.loc)
         time_arrival = time
         time_leave = time
         arrival = 0
@@ -98,13 +100,49 @@ class TSP:
                 time_arrival = time_leave + self.dist(points[arrival],points[i])/self.speed
                 time_leave = time_leave + self.cost(points[arrival],points[i],time_leave)
                 arrival = i
-                print("第",count,"个点坐标：",points[i].loc,",Deadline:",int(points[i].deadline[0]/60)+8,":",int(points[i].deadline[0]%60),"-",int(points[i].deadline[1]/60)+8,":",int(points[i].deadline[1]%60),"到达时间：",int(time_arrival/60+8),":",int(time_arrival%60),"离开时间：",int(time_leave/60+8),":",int(time_leave%60))
+                print("第",i,"个点坐标：",points[i].loc,",Deadline:",int(points[i].deadline[0]/60)+8,":",int(points[i].deadline[0]%60),"-",int(points[i].deadline[1]/60)+8,":",int(points[i].deadline[1]%60),"到达时间：",int(time_arrival/60+8),":",int(time_arrival%60),"离开时间：",int(time_leave/60+8),":",int(time_leave%60))
 
             else:
                 self.color = "red"
                 self.canvas.create_oval(points[i].loc[0]-3, points[i].loc[1]-3, points[i].loc[0]+3, points[i].loc[1]+3, fill = self.color, tags = "point")
-                #print("第",i,"个点不满足deadline，",points[i].loc)
+                print("第",i,"个点不满足deadline，坐标：",points[i].loc,",Deadline:",int(points[i].deadline[0]/60)+8,":",int(points[i].deadline[0]%60),"-",int(points[i].deadline[1]/60)+8,":",int(points[i].deadline[1]%60))
         self.accept.set(int(count))
+
+    def finash_line_end(self,points,time):
+        self.clear()
+        self.canvas.create_oval(points[0].loc[0]-3, points[0].loc[1]-3, points[0].loc[0]+3, points[0].loc[1]+3, fill = "green", tags = "point")
+        print("起点坐标（绿色）:",points[0].loc,"    Deadline说明：t1-t2中，t1为退房时间，t2为根据航班时间确定是行李最晚提取时间")
+        self.canvas.create_oval(self.end.loc[0]-3, self.end.loc[1]-3, self.end.loc[0]+3, self.end.loc[1]+3, fill = "yellow", tags = "point")
+        print("终点坐标（黄色）:",self.end.loc)
+        time_arrival = time
+        time_leave = time
+        arrival = 0
+        count = 0
+        for i in range(len(points)):
+            if i == 0 :continue
+            if time_leave > self.end.deadline[1]:
+                self.canvas.create_line(points[arrival].loc,self.end.loc,tags = "line")
+                self.color = "red"
+                self.canvas.create_oval(points[i].loc[0]-3, points[i].loc[1]-3, points[i].loc[0]+3, points[i].loc[1]+3, fill = self.color, tags = "point")
+                continue
+            if time_leave + self.dist(points[arrival],points[i])/self.speed < points[i].deadline[1]:
+                self.color = "black"
+                count = count + 1
+                self.canvas.create_oval(points[i].loc[0]-3, points[i].loc[1]-3, points[i].loc[0]+3, points[i].loc[1]+3, fill = self.color, tags = "point")
+                self.canvas.create_line(points[arrival].loc,points[i].loc,tags = "line")
+                time_arrival = time_leave + self.dist(points[arrival],points[i])/self.speed
+                time_leave = time_leave + self.cost(points[arrival],points[i],time_leave)
+                arrival = i
+                print("第",i,"个点坐标：",points[i].loc,",Deadline:",int(points[i].deadline[0]/60)+8,":",int(points[i].deadline[0]%60),"-",int(points[i].deadline[1]/60)+8,":",int(points[i].deadline[1]%60),"到达时间：",int(time_arrival/60+8),":",int(time_arrival%60),"离开时间：",int(time_leave/60+8),":",int(time_leave%60))
+
+            else:
+                self.color = "red"
+                self.canvas.create_oval(points[i].loc[0]-3, points[i].loc[1]-3, points[i].loc[0]+3, points[i].loc[1]+3, fill = self.color, tags = "point")
+                print("第",i,"个点不满足deadline，坐标：",points[i].loc,",Deadline:",int(points[i].deadline[0]/60)+8,":",int(points[i].deadline[0]%60),"-",int(points[i].deadline[1]/60)+8,":",int(points[i].deadline[1]%60))
+        self.accept.set(int(count))
+
+
+
 
 
     
@@ -154,12 +192,12 @@ class TSP:
                 i = i + 1
         return points
 
-    def get_ET(self,points):     #确定第一次送货到车站的时间
-        time = points[0].deadline[1]
+    def get_ETpoint(self,points):     #确定最早需要送达的订单
+        i = 0
         for point in points:
-            if point.deadline[1] < time:
-                time = point.deadline[1]
-        return time
+            if point.deadline[1] < points[i].deadline[1]:
+                i = points.index(point)
+        return points[i]
 
     def get_points(points,time):
         temp = []
@@ -182,16 +220,7 @@ class TSP:
         return temp
 
 
-    def time_2_opt(self,points):
-        for i in range(1,len(points)-3):
-            for k in range(i+1,len(points)-2):
-                temp = points
-                point = points[k]
-                temp.remove(point)
-                temp.insert(i,point)
-                if self.sumcost(points,0) > self.sumcost(temp,0) and self.Accept(temp):
-                    points = temp
-        return points
+
 
      
 
@@ -219,6 +248,13 @@ class TSP:
                 return False
         return True
 
+    def get_num(self,points,time):
+        count = 0
+        for i in range(len(points)-1):
+            time = time + self.cost(points[i],points[i+1],time)
+            if time <= points[i+1].deadline[1]: count = count + 1
+        return count
+
 
     def dist(self,a,b):
         return sqrt(pow(a.loc[0] - b.loc[0], 2) + pow(a.loc[1] - b.loc[1], 2))
@@ -232,7 +268,6 @@ class TSP:
     def nearest_neighbour(self):
         time = 0
         i = 0
-        self.end.deadline = (0,self.get_ET(self.list))
         p = [self.start]
         points = self.list[:]
         for i in range(len(points)):
@@ -247,19 +282,30 @@ class TSP:
 
     def test(self):
         time = 0
-        self.end.deadline = (0,self.get_ET(self.list))
+        ETpoint = self.get_ETpoint(self.list)
+        points = []
+        for point in self.list:
+            if point.deadline[0] < ETpoint.deadline[1]:
+                points.append(point)
+        print("最早要求送达时间为：",int(ETpoint.deadline[1]/60 + 10),":",int(ETpoint.deadline[0]%60),"在此之前可取得订单共",len(points),"件")
+        self.end.deadline = (0,int(ETpoint.deadline[1]+60))
         p = [self.start]
-        p.append(self.end)
-        points = self.list[:]
         for i in range(len(points)):
             temp = points[0]
             for point in points:
-                if self.DIST(p[i],point,time) < self.DIST(p[i],temp,time): temp = point
+                if self.dist(p[i],point) < self.dist(p[i],temp): temp = point
             points.remove(temp)
-            p.insert(len(p)-2,temp)
-            time = time + self.DIST(p[i],temp,time)
+            p.append(temp)
+            
         self.clear()
-        self.finash_line(p,0)
+        self.finash_line_end(p,0)
+
+
+
+
+
+            
+
     
 
 
