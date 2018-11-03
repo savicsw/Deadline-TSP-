@@ -287,10 +287,10 @@ if __name__ == '__main__':
     c.bind("<Button-1>", click)
 
     Button(root, text = "Clear", command = clear).pack(side = LEFT)
-    Button(root, text = "Randomise", command = randomise).pack(side = LEFT)
-    #Button(root, text = "Nearest Neighbour", command = lambda : optimisation_click(nearest_neighbour_algorithm)).pack(side = LEFT)
+    Button(root, text = "Randomise", command = randomise).pack(side = LEFT)nearest_neighbour
+    Button(root, text = "Nearest Neighbour", command = lambda : optimisation_click(_algorithm)).pack(side = LEFT)
     Button(root, text = "2-OPT", command = lambda : optimisation_click(two_opt)).pack(side = LEFT)
-    #Button(root, text = "3-OPT", command = lambda : optimisation_click(three_opt)).pack(side = LEFT)
+    Button(root, text = "3-OPT", command = lambda : optimisation_click(three_opt)).pack(side = LEFT)
     Button(root, text = "time-2-OPT", command = lambda : optimisation_click(Time_2_opt)).pack(side = LEFT)
     Button(root, text = "TimeSort", command = lambda : optimisation_click(TimeSort)).pack(side = LEFT)
     

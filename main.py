@@ -1,245 +1,273 @@
 from tkinter import *
 from random import *
 from math import sqrt
+from point import *
 import operator
 import re
 import numpy
 import numpy as np
+import os
 
-points_in = [] #输入点序列
-size = 550  #地图尺寸
-deadline = []   #deadline （开始时间，截止时间）
-CostList = []   #cost列表-各点之间访问的cost
-speed = 10      #速度，用于调整cost的参数
-number = 50     #point的数量
-deadline_range = [(30,450),(540,960)]   #deadline的随机范围（平均分布）
-color = "black"     #颜色定义
-red_points = []     #红点序列
-destination = []    #目的地序列
-Station = [(500,300),(200,50)]   #机场/车站
-variance = 130       #方差
-mu = 275            #均值   
-
-
-def click(event):
-    draw_point(event.x, event.y)
-    points_in.append((event.x, event.y))
-
-def draw_point(x,y):
-    if color == "black":
-        c.create_oval(x-3, y-3, x+3, y+3, fill="black", tags = "black_point")
-    if  color == "red" :
-        c.create_oval(x-3, y-3, x+3, y+3, fill="red", tags = "red_point")
-
-
-def draw_points(points):
-    c.delete("point", "line");
-    for point in points:
-        draw_point(int(point[0]),int(point[1]))
-
-def draw_line(points):
-    c.delete("line")
-    c.create_line(points, tags="line")
-
-
-
-def clear():
-    global points_in
-    global deadline
-    global TimeList
-    global red_points
-    c.delete("point", "line","black_point","red_point")
-    points_in = []
-    deadline = []
-    TimeList = []
-    red_points = []
-
-
-
-def randomise_n(): #正态随机
-    global points_in
-    global deadline
-    global color
-    clear()
-    for i in range(number):
-        while TRUE :
-            point = (variance*np.random.randn()+mu,variance*np.random.randn()+mu)
-            if point[0] >= 0 and point[0] <= size and point[1] >= 0 and point[1] <= size:
-                break
-            if point[0] < 0 : point = (randint(0,5),point[1])
-            if point[0] > 550 :point = (randint(545,550),point[1])
-            if point[1] < 0 : point = (point[0],randint(0,5))
-            if point[1] > 550 :point = (point[0],randint(545,550))
-            break
-
-        points_in.append(point)
-        deadline.append((randint(int(deadline_range[0][0]),int(deadline_range[0][1])),randint(int(deadline_range[1][0]),int(deadline_range[1][1]))))
-    color = "black"
-    draw_points(points_in)
-    random_destination()
-
-
-
-
-def random_destination(): #随机目的地
-    global destination
-    destination = []
-    for i in range(number):
-        point = randint(0,1)
-        destination.append(point)
-
-
-
-def get_LT(points): #获取遍历序列要求的最晚开始时间
-    current_time = 0
-    points.reverse()
-    for i in range(len(points)):
-        if i == 0 :current_time = deadline[points_in.index(points[i])][1];continue
-        if current_time - cost(points[i],points[i-1]) < deadline[points_in.index(points[i])][1]:
-            current_time = current_time - cost(points[i],points[i-1])
-            continue
-        current_time = deadline[points_in.index(points[i])][1]
-    return current_time
-
-
-def get_time(points): #获取遍历序列的时间
-    current_time = 0
-    for i in range(len(points)-1):
-        if i == 0 :current_time = deadline[points_in.index(points[i])][0];continue
-        if current_time + cost(points[i-1],points[i]) < deadline[points_in.index(points[i])][0] :
-            current_time = deadline[points_in.index(points[i])][0]
-            continue
-        current_time = current_time + cost(points[i-1],points[i])
-    return current_time
-
-
-
-def randomise(): #随机数据
-    global points_in
-    global deadline
-    global color
-    clear()
-    for i in range(number):
-        point = (randint(1,size),randint(1,size))
-        points_in.append(point)
-        deadline.append((randint(int(deadline_range[0][0]),int(deadline_range[0][1])),randint(int(deadline_range[1][0]),int(deadline_range[1][1]))))
-    color = "black"
-    draw_points(points_in)
-    random_destination()
-
-
-def dist(a,b):
-    return sqrt(pow(a[0] - b[0], 2) + pow(a[1] - b[1], 2))
-
-def cost(a,b):
-    return sqrt(pow(a[0] - b[0], 2) + pow(a[1] - b[1], 2))/speed
-
+class TSP:
+    def __init__(self):
+        #初始化points数据
+        self.start = point()    #起点
+        self.start.loc = (110,136)
+        self.start.deadline = (0,3600)
+        self.end = point()      #终点
+        self.end.deadline = (0,3600)
+        self.end.loc = (487,535)
+        self.list = []      #遍历点
+        self.color = "black" #初始颜色 fill填充oval的颜色
+        self.speed = 2    #速度
+        for i in range(50):
+            self.list.append(point())
+            #print("第",i+1,"个点坐标：",self.list[i].loc,",deadline:",self.list[i].deadline)
         
+        window = Tk() #创建窗口
+        window.title("TSP Demo") #给窗口命名
 
+        #在窗口画布
+        self.canvas = Canvas(window, width = 650, height = 650, bg = "white")
+        self.canvas.pack()
 
-def deadline_sort(points):
-    global points_in
-    global deadline
-    for i in range(len(points)-1):
-        for j in range(len(points)-1-i):
-            if deadline[points_in.index(points[j])][1] > deadline[points_in.index(points[j+1])][1]:
-                points[j],points[j+1] = points[j+1],points[j]
-    return points
-
-def time_2_opt(points):
-    for i in range(len(points) - 3):
-        for j in range(i+2,len(points)-1):
-            if cost(points[i],points[i+1]) + cost(points[j-1],points[j]) + cost(points[j],points[j+1]) > cost(points[i],points[j]) + cost(points[j],points[i+1]) + cost(points[j-1],points[j+1]):
-                temp = points[:]
-                temp.pop(j)
-                temp.insert(i+1,points[j])
-                if get_time(temp[:i+2]) <= get_LT(temp[i+1:]): points = temp
-    return points
-            
-    return points
-
-
-def depart_points(points):
-    global red_points
-    red_points = []
-    currenttime = 0
-    temp = []
-    for i in range(len(points)-1):
-            j = points_in.index(points[i])
-            if currenttime <= deadline[j][1] :
-                if currenttime < deadline[j][0] :
-                    currenttime = deadline[j][0]
-                else:
-                    currenttime = currenttime + cost(points[i],points[i+1])
-                temp.append(points[i])
-                continue
-            else:
-                red_points.append(points[i])
-
-    return temp
-
-def distance(points):
-    if len(points) == 0:
-        return 0
-    distance = 0
-    for i in range(len(points) - 1):
-        distance += dist(points[i], points[i + 1])
-    return distance
-
-
-
-def optimisation_click(algorithm):
-    global points_in
-    global red_points
-    global color
-    c.delete("black_point", "line")
-    points = points_in[:]
-    points = deadline_sort(points)
-    for i in range(5):
-
-        points = algorithm(points)
-    points = depart_points(points)
-    for i in range(5):
-
-        points = algorithm(points)
-    color = "black"
-    draw_points(points)
-    color = "red"
-    draw_points(red_points)
-    draw_line(points)
-    v.set(int(distance(points)))
-    num.set(len(points_in))
-    accept.set(len(points)/len(points_in))
-
-
-
-
-if __name__ == '__main__':
-    root = Tk()
-
-    root.title("Deadline TSP")
-    root.resizable(0,0)
-
-    c = Canvas(root, bg="white", width = size, height = size)
-
-    c.configure(cursor="crosshair")
-    c.pack()
-    c.bind("<Button-1>", click)
-
-    Button(root, text = "Clear", command = clear).pack(side = LEFT)
-    Button(root, text = "Randomise", command = randomise).pack(side = LEFT)
-    Button(root, text = "time-2-OPT", command = lambda : optimisation_click(time_2_opt)).pack(side = LEFT)
-    Button(root, text = "Randomise_n", command = randomise_n).pack(side = LEFT)
+        Button(window, text = "Random", command = self.random).pack(side = LEFT)
+        #Button(root, text = "Randomise", command = randomise).pack(side = LEFT)
+        Button(window, text = "nearest_neighbour", command = self.nearest_neighbour).pack(side = LEFT)
+        Button(window, text = "test", command = self.test).pack(side = LEFT)
+        #Button(root, text = "display", command = display).pack(side = LEFT)
     
 
-    v = IntVar()
-    num = IntVar()
-    accept = IntVar()
-    Label(root, textvariable = v).pack(side = RIGHT)
-    Label(root, text = "dist:").pack(side = RIGHT)
-    Label(root, textvariable = num).pack(side = RIGHT)
-    Label(root, text = "num:").pack(side = RIGHT)
-    Label(root, textvariable = accept).pack(side = RIGHT)
-    Label(root, text = "Acceptance rate:").pack(side = RIGHT)
+        #self.v = IntVar()
+        #self.num = IntVar()
+        self.accept = IntVar()
+        #Label(window, textvariable = self.v).pack(side = RIGHT)
+       # Label(window, text = "dist:").pack(side = RIGHT)
+      #  Label(window, textvariable = self.num).pack(side = RIGHT)
+      #  Label(window, text = "num:").pack(side = RIGHT)
+        Label(window, textvariable = self.accept).pack(side = RIGHT)
+        Label(window, text = "Acceptance").pack(side = RIGHT)
 
-    root.mainloop()
+
+
+
+
+        #创建事件循环直到关闭主窗口
+        window.mainloop()
+
+    
+
+    def random(self):
+        self.list = []
+        self.clear()
+        os.system('cls')
+        for i in range(50):
+            self.list.append(point())
+        self.color = "black"
+        self.draw_points()
+    
+    def clear(self):
+        self.canvas.delete("point","line")
+
+    def draw_points(self):
+        for point in self.list:
+            self.canvas.create_oval(point.loc[0]-3, point.loc[1]-3, point.loc[0]+3, point.loc[1]+3, fill = self.color, tags = "point")
+
+    def draw_line(self):
+        temp = [self.start]
+        temp = temp + self.list
+        temp.append(self.end)
+        for i in range(len(temp)-1):
+            self.canvas.create_line(temp[i].loc,temp[i+1].loc)
+
+    def finash_line(self,points,time):
+        self.clear()
+        self.canvas.create_oval(points[0].loc[0]-3, points[0].loc[1]-3, points[0].loc[0]+3, points[0].loc[1]+3, fill = "green", tags = "point")
+        print("起点坐标（绿色）:",points[0].loc,"    Deadline说明：t1-t2中，t1为退房时间，t2为根据航班时间确定是行李最晚提取时间")
+        time_arrival = time
+        time_leave = time
+        arrival = 0
+        count = 0
+        for i in range(len(points)):
+            if i == 0 :continue
+            if time_leave + self.cost(points[arrival],points[i]) < points[i].deadline[1]:
+                self.color = "black"
+                count = count + 1
+                self.canvas.create_oval(points[i].loc[0]-3, points[i].loc[1]-3, points[i].loc[0]+3, points[i].loc[1]+3, fill = self.color, tags = "point")
+                self.canvas.create_line(points[arrival].loc,points[i].loc,tags = "line")
+                time_arrival = time_leave + self.cost(points[arrival],points[i])
+                if time_arrival < points[i].deadline[0]: time_leave = points[i].deadline[0]
+                else : time_leave = time_arrival
+                arrival = i
+                print("第",count,"个点坐标：",points[i].loc,",Deadline:",int(points[i].deadline[0]/60)+8,":",int(points[i].deadline[0]%60),"-",int(points[i].deadline[1]/60)+8,":",int(points[i].deadline[1]%60),"到达时间：",int(time_arrival/60+8),":",int(time_arrival%60),"离开时间：",int(time_leave/60+8),":",int(time_leave%60))
+
+            else:
+                self.color = "red"
+                self.canvas.create_oval(points[i].loc[0]-3, points[i].loc[1]-3, points[i].loc[0]+3, points[i].loc[1]+3, fill = self.color, tags = "point")
+                #print("第",i,"个点不满足deadline，",points[i].loc)
+        self.accept.set(int(count))
+
+
+    
+
+
+
+    def get_LT(points):
+        current_time = 0
+        points.reverse()
+        for i in range(len(points)-1):
+            if i == 0 : current_time = points[i].deadline[1];continue
+            if current_time - cost(points[i-1].loc,points[i].loc) < points[i].deadline[1] : current_time = current_time - cost(points[i-1].loc,points[i].loc);continue
+            current_time = points[i].deadline[1]
+        return current_time
+
+    def cost(self,a,b):
+        return sqrt(pow(a.loc[0] - b.loc[0], 2) + pow(a.loc[1] - b.loc[1], 2))/self.speed
+
+    def get_time(self,points,time):
+        current_time = time
+        for i in range(len(points)-1):
+            current_time = cost(points[i].loc,points[i+1].loc) + current_time
+            if current_time < points[i+1].deadline[0]: current_time = points[i+1].deadline[0]
+        return current_time
+        
+    def quicksort(points):
+        key = 0
+        i = 0
+        j = len(points)
+        while i < j :
+            while i < j and key <= j:
+                if points[key].deadline[1] > points[j].deadline[1] :
+                    points[i],points[j] = points[j],points[i]
+                    i = i + 1
+                    key = j
+                    break
+                j = j - 1
+            while i < j and key >= i:
+                if points[key].deadline[1] < points[i].deadline[1] :
+                    points[i],points[j] = points[j],points[i]
+                    j = j - 1
+                    key = i
+                    break
+                i = i + 1
+        return points
+
+    def get_ET(self,points):     #确定第一次送货到车站的时间
+        time = points[0].deadline[1]
+        for point in points:
+            if point.deadline[1] < time:
+                time = point.deadline[1]
+        return time
+
+    def get_points(points,time):
+        temp = []
+        for point in points:
+            if point.deadline[0] < time: temp.append(point)
+        return temp
+
+
+    def deal_points(self):
+        temp = []
+        temp.append(self.start)
+        temp.append(self.end)
+        for i in range(len(self.list)):
+            for j in range(1,len(temp)):
+                temp.insert(j,self.list[i])
+                if self.Accept(temp):
+                    if len(temp) > 3:
+                        temp = self.time_2_opt(temp)
+                else: temp.remove(self.list[i])
+        return temp
+
+
+    def time_2_opt(self,points):
+        for i in range(1,len(points)-3):
+            for k in range(i+1,len(points)-2):
+                temp = points
+                point = points[k]
+                temp.remove(point)
+                temp.insert(i,point)
+                if self.sumcost(points,0) > self.sumcost(temp,0) and self.Accept(temp):
+                    points = temp
+        return points
+
+     
+
+    def sumcost(self,points,time):
+        sum = 0
+        time_arrival = time
+        time_leave = time
+        for i in range(1,len(points)-1):
+            time_arrival = self.cost(points[i-1],points[i]) + time_arrival
+            sum = sum + self.cost(points[i-1],points[i])
+            if time_arrival < points[i].deadline[0]:time_leave = points[i].deadline[0];sum = sum + time_leave - time_arrival
+            else:time_leave = time_arrival
+        return sum
+
+
+    def Accept(self,points):
+        time_arrival = 0
+        time_leave = 0
+        for i in range(1,len(points)-1):
+            if time_leave + self.cost(points[i-1],points[i]) < points[i].deadline[1]:
+                time_arrival = time_leave + self.cost(points[i-1],points[i])
+                if time_arrival < points[i].deadline[0]: time_leave = points[i].deadline[0]
+                else : time_leave = time_arrival
+            else:
+                return False
+        return True
+
+
+    def dist(self,a,b):
+        return sqrt(pow(a.loc[0] - b.loc[0], 2) + pow(a.loc[1] - b.loc[1], 2))
+
+    def  DIST(self,a,b,time):
+        d1 = sqrt(pow(a.loc[0] - b.loc[0], 2) + pow(a.loc[1] - b.loc[1], 2))/self.speed
+        if time + d1 < b.deadline[0]:
+            return b.deadline[0] - time
+        return d1
+
+
+
+    def nearest_neighbour(self):
+        time = 0
+        i = 0
+        self.end.deadline = (0,self.get_ET(self.list))
+        p = [self.start]
+        points = self.list[:]
+        for i in range(len(points)):
+            temp = points[0]
+            for point in points:
+                if self.dist(p[i],point) < self.dist(p[i],temp): temp = point
+            points.remove(temp)
+            p.append(temp)
+            
+        self.clear()
+        self.finash_line(p,0)
+
+    def test(self):
+        time = 0
+        self.end.deadline = (0,self.get_ET(self.list))
+        p = [self.start]
+        p.append(self.end)
+        points = self.list[:]
+        for i in range(len(points)):
+            temp = points[0]
+            for point in points:
+                if self.DIST(p[i],point,time) < self.DIST(p[i],temp,time): temp = point
+            points.remove(temp)
+            p.insert(len(p)-2,temp)
+            time = time + self.DIST(p[i],temp,time)
+        self.clear()
+        self.finash_line(p,0)
+    
+
+
+
+
+
+
+
+
+
+TSP()
