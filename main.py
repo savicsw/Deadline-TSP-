@@ -10,7 +10,7 @@ import os
 
 class TSP:
     def __init__(self):
-        #初始化points数据
+        #初始化points数据..
         self.start = point()    #起点
         self.start.loc = (110,136)
         self.start.deadline = (0,3600)
