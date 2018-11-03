@@ -26,7 +26,7 @@ class point(object):
 
         while True:#deadline 正态随机
             a=int(80*np.random.randn()+200)
-            b=int(80*np.random.randn()+400)
+            b=int(80*np.random.randn()+600)
             if b-a > 240 and a > 60 :break
         self.deadline = (a,b)
         #print(self.deadline)
